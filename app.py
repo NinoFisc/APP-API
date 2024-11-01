@@ -30,9 +30,9 @@ def get_company(id):
 
 
 @app.route('/company/<int:id>/competitors', methods=['GET'])    
-def get_competitors(id):
-    competitors_id = competitor_association.query.filter_by(company_id=id).all()
-    competitors = [Company.query.get(competitor.competitor_id) for competitor in competitors_id]
+def get_company_competitors(id):
+    company = Company.query.get_or_404(id)
+    competitors = company.competitors
     company_schema = CompanySchema(many=True)
     return jsonify(company_schema.dump(competitors))
     
@@ -53,9 +53,12 @@ def add_company():
 @app.route('/company/<int:id>/competitors', methods=['POST'])   
 def add_competitor(id):
     company = Company.query.get_or_404(id)
+    if 'competitor_id' not in request.json:
+        return jsonify({"error": "competitor_id is required"}), 400
     competitor = Company.query.get_or_404(request.json['competitor_id'])
-    company.competitors.append(competitor)
-    db.session.commit()
+    if competitor not in company.competitors:
+        company.competitors.append(competitor)
+        db.session.commit()
     company_schema = CompanySchema()
     return jsonify(company_schema.dump(company))
 
