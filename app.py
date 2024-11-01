@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from flask_migrate import Migrate
-from models import db, Company
+from models import db, Company, competitor_association
 from schemas import CompanySchema
 
 app = Flask(__name__)
@@ -27,11 +27,15 @@ def get_company(id):
     company = Company.query.get_or_404(id)
     company_schema = CompanySchema()
     return jsonify(company_schema.dump(company))
+
+
 @app.route('/company/<int:id>/competitors', methods=['GET'])    
 def get_competitors(id):
-    company = Company.query.get_or_404(id)
-    company_schema = CompanySchema()
-    return jsonify(company_schema.dump(company))
+    competitors_id = competitor_association.query.filter_by(company_id=id).all()
+    competitors = [Company.query.get(competitor.competitor_id) for competitor in competitors_id]
+    company_schema = CompanySchema(many=True)
+    return jsonify(company_schema.dump(competitors))
+    
 
 @app.route('/company', methods=['POST'])
 def add_company():

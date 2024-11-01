@@ -26,6 +26,4 @@ class Company(db.Model):
         backref='competitor_of'
     )
 
-nestle = Company(id =1, name='Nestle', domain='nestle.com', location='Vevey, Switzerland', description='Food and Beverage')
-
 
