@@ -3,11 +3,11 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
-# Table d'association pour la relation many-to-many
+# Table d'association pour la relation many-to-many symétrique
 competitor_association = db.Table(
     'competitor_association',
-    db.Column('company_id', db.Integer, db.ForeignKey('company.id'), primary_key=True),
-    db.Column('competitor_id', db.Integer, db.ForeignKey('company.id'), primary_key=True)
+    db.Column('company_id', db.Integer, db.ForeignKey('company.id')),
+    db.Column('competitor_id', db.Integer, db.ForeignKey('company.id'))
 )
 
 class Company(db.Model):
@@ -23,7 +23,18 @@ class Company(db.Model):
         secondary=competitor_association,
         primaryjoin=id == competitor_association.c.company_id,
         secondaryjoin=id == competitor_association.c.competitor_id,
-        backref='competitor_of'
+        backref=db.backref('competitors_back', lazy='dynamic'),
+        lazy='dynamic'
     )
+
+    def add_competitor(self, competitor):
+        if not self.is_competitor(competitor):
+            self.competitors.append(competitor)
+            competitor.competitors.append(self)
+
+    def is_competitor(self, competitor):
+        return self.competitors.filter(
+            competitor_association.c.competitor_id == competitor.id
+        ).count() > 0
 
 
